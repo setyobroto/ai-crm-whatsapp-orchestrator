@@ -1,0 +1,378 @@
+{
+  "name": "Auto-Capture Sensor CS/Pelanggan/Bot — Smart v4 — world-english Docker v4.2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wa-incoming-world-english",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "name": "Webhook Sensor",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ba0ae0e0-a4ff-4ee9-bbb2-21d64b04007f",
+      "webhookId": "d72b1c31-7843-4cf1-aa0c-9f4a757b75bd",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "XfrNewNxFaTZMsB4",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{\"tenant\":\"world-english\",\"gateway\":\"http://host.docker.internal:3001\"}}];"
+      },
+      "name": "Konfigurasi Klien",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "d79ffdec-9c1b-4c10-98a0-72860bb4d107"
+    },
+    {
+      "parameters": {
+        "jsCode": "const e=$('Webhook Sensor').first().json.body;const c=$input.first().json;if(!e||e.tenant!==c.tenant||!/^\\d{10,15}$/.test(e.number))throw new Error('Event/tenant tidak valid');return [{json:{number:e.number}}];"
+      },
+      "name": "Validasi Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "9eda55c6-7b01-41c6-902e-965dd42f5145"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Konfigurasi Klien').first().json.gateway + '/automation/lead' + '?number=' + encodeURIComponent($json.number) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "name": "Ambil Sensor Terkini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "740d8463-dd53-446e-beb8-d3cc47443148",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "XfrNewNxFaTZMsB4",
+          "name": "Header Auth account"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json; if(r.tenant!==$('Konfigurasi Klien').first().json.tenant) throw new Error('Respons gateway tenant salah'); return (r.leads||[]).map(x=>({json:x,pairedItem:{item:0}}));"
+      },
+      "name": "Data Sensor ke Sheet",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "eab3bba5-3825-4213-8f2e-0fd4695575d9"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Database Leads Kursus",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_DOCUMENT_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_DOCUMENT_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nama": "={{ $json.Nama }}",
+            "No_WhatsApp": "={{ $json.No_WhatsApp }}",
+            "Status": "={{ $json.Status }}",
+            "Penjawab_Terakhir": "={{ $json.Penjawab_Terakhir }}",
+            "Penjawab_Manusia_Terakhir": "={{ $json.Penjawab_Manusia_Terakhir }}",
+            "Tahap_FU": "={{ $json.Tahap_FU }}",
+            "FU_Berikutnya": "={{ $json.FU_Berikutnya }}",
+            "Waktu_Pesan_Pelanggan": "={{ $json.Waktu_Pesan_Pelanggan }}",
+            "Waktu_Pesan_CS": "={{ $json.Waktu_Pesan_CS }}",
+            "Waktu_Pesan_Bot": "={{ $json.Waktu_Pesan_Bot }}",
+            "Ringkasan_Chat": "={{ $json.Ringkasan_Chat }}",
+            "Kendala": "={{ $json.Kendala }}",
+            "Aksi_Terakhir_Diproses": "={{ $json.Aksi_Terakhir_Diproses }}",
+            "Catatan_Sistem": "={{ $json.Catatan_Sistem }}",
+            "Source_Account": "={{ $json.Source_Account }}"
+          },
+          "matchingColumns": [
+            "No_WhatsApp"
+          ],
+          "schema": [
+            {
+              "id": "Nama",
+              "displayName": "Nama",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "No_WhatsApp",
+              "displayName": "No_WhatsApp",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Penjawab_Terakhir",
+              "displayName": "Penjawab_Terakhir",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Penjawab_Manusia_Terakhir",
+              "displayName": "Penjawab_Manusia_Terakhir",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tahap_FU",
+              "displayName": "Tahap_FU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FU_Berikutnya",
+              "displayName": "FU_Berikutnya",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Waktu_Pesan_Pelanggan",
+              "displayName": "Waktu_Pesan_Pelanggan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Waktu_Pesan_CS",
+              "displayName": "Waktu_Pesan_CS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Waktu_Pesan_Bot",
+              "displayName": "Waktu_Pesan_Bot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ringkasan_Chat",
+              "displayName": "Ringkasan_Chat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Kendala",
+              "displayName": "Kendala",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Aksi_Terakhir_Diproses",
+              "displayName": "Aksi_Terakhir_Diproses",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Catatan_Sistem",
+              "displayName": "Catatan_Sistem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Source_Account",
+              "displayName": "Source_Account",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "name": "Simpan Sensor dan Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "3f1c0278-0046-4882-81cb-96cc69193b24",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleApi": {
+          "id": "qotrOARqIti0yZ7f",
+          "name": "Google Service Account account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Sensor": {
+      "main": [
+        [
+          {
+            "node": "Konfigurasi Klien",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konfigurasi Klien": {
+      "main": [
+        [
+          {
+            "node": "Validasi Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validasi Event": {
+      "main": [
+        [
+          {
+            "node": "Ambil Sensor Terkini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ambil Sensor Terkini": {
+      "main": [
+        [
+          {
+            "node": "Data Sensor ke Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Sensor ke Sheet": {
+      "main": [
+        [
+          {
+            "node": "Simpan Sensor dan Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Asia/Jakarta"
+  },
+  "versionId": "f8572c35-240d-4575-b589-aba8b138166a",
+  "meta": {
+    "instanceId": "00979ddc910aa45473ca628d9856c6b71906bf2938fdf55d6f7bca7093ecc6cd"
+  },
+  "nodeGroups": [],
+  "id": "jkbcsBPj4JapTCFR",
+  "tags": []
+}
